@@ -19,7 +19,10 @@ def main():
 
     # Infer d_model from the embedding matrix
     d_model = model.get_input_embeddings().weight.shape[1]
-    controller = OLCController(d_model=d_model, num_channels=2, device=model.device)
+    param = next(model.parameters())
+    controller = OLCController(
+        d_model=d_model, num_channels=2, device=param.device, dtype=param.dtype
+    )
     handles = attach_projection_hooks(model, controller)
 
     def step_fn(text: str, agent_idx: int) -> str:

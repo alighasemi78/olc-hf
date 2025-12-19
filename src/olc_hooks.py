@@ -1,33 +1,37 @@
 import torch
 
 
-def make_block_projectors(d: int, C: int, device):
+def make_block_projectors(d: int, C: int, device, dtype):
     assert d % C == 0
     dc = d // C
     Ps = []
     for c in range(C):
-        P = torch.zeros(d, d, device=device)
-        P[c * dc : (c + 1) * dc, c * dc : (c + 1) * dc] = torch.eye(dc, device=device)
+        P = torch.zeros(d, d, device=device, dtype=dtype)
+        P[c * dc : (c + 1) * dc, c * dc : (c + 1) * dc] = torch.eye(
+            dc, device=device, dtype=dtype
+        )
         Ps.append(P)
     return Ps
 
 
 class OLCController:
-    """
-    Controls which channel is active for the current forward pass.
-    Call set_channel(i) before each agent step.
-    """
-
-    def __init__(self, d_model: int, num_channels: int, device):
-        self.Ps = make_block_projectors(d_model, num_channels, device)
+    def __init__(self, d_model: int, num_channels: int, device, dtype):
+        self.d_model = d_model
+        self.num_channels = num_channels
+        self.device = device
+        self.dtype = dtype
+        self.Ps = make_block_projectors(d_model, num_channels, device, dtype)
         self.channel = 0
 
     def set_channel(self, c: int):
         self.channel = c
 
     def project(self, x: torch.Tensor):
-        # x: [B, T, d] or [T, d] depending on model internals; handle last dim
+        # Ensure projector matches runtime dtype/device (important when HF uses autocast / device_map)
         P = self.Ps[self.channel]
+        if P.device != x.device or P.dtype != x.dtype:
+            P = P.to(device=x.device, dtype=x.dtype)
+            self.Ps[self.channel] = P
         return x @ P.T
 
 
