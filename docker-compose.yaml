@@ -1,0 +1,44 @@
+services:
+  olc:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: olc-hf:latest
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      # If you set HF_TOKEN in .env, transformers will pick it up
+      - HF_TOKEN=${HF_TOKEN:-}
+    command: ["python3", "src/run_baseline.py"]
+
+  olc_gpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: olc-hf:latest
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      - HF_HOME=/root/.cache/huggingface
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface
+      - HF_TOKEN=${HF_TOKEN:-}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: ["python3", "src/run_baseline.py"]
+    profiles: ["gpu"]
+
+volumes:
+  hf_cache:
