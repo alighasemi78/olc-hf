@@ -12,7 +12,7 @@ def main():
         torch_dtype=torch.float16 if device == "cuda" else torch.float32,
         device_map="auto" if device == "cuda" else None,
         trust_remote_code=True,
-    ).to(device if device == "cpu" else model.device)
+    ).to(device)
 
     def step_fn(text: str) -> str:
         inputs = tok(text, return_tensors="pt").to(model.device)
