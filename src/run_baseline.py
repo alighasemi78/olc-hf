@@ -5,14 +5,14 @@ from agent_loop import run_turn_based_agents
 MODEL = "Qwen/Qwen2.5-0.5B-Instruct"  # small + permissive
 
 def main():
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     tok = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
         MODEL,
-        torch_dtype=torch.float16 if device == "cuda:0" else torch.float32,
-        device_map="auto" if device == "cuda:0" else None,
+        torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+        device_map="auto" if device == "cuda" else None,
         trust_remote_code=True,
-    ).to(device)
+    )
 
     def step_fn(text: str) -> str:
         inputs = tok(text, return_tensors="pt").to(model.device)
